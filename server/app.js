@@ -54,6 +54,11 @@ const handleFormData = async (req, res) => {
     const chunkPath = path.resolve(filePath, `chunk_${hash}`)
     if (!fs.existsSync(filePath))
       fs.mkdirsSync(filePath)
+    if (fs.existsSync(chunkPath)) {
+      res.send({ code: 400, msg: '切片已存在' })
+      fs.unlinkSync(chunk.path)
+      return
+    }
     await fs.move(chunk.path, chunkPath)
     res.send({ code: 200, msg: '切片上传完成' })
   })
@@ -67,7 +72,7 @@ const merageChunks = (filePath, filename) => {
     chunkPaths.sort((a, b) => a.split('_')[2] - b.split('_')[2])
     // 采用Stream方式合并
     const targetStream = fs.createWriteStream(path.resolve(UPLOAD_DIR, filename))
-    
+
     const readStream = function (chunkArray, cb) {
       const path = chunkArray.shift()
       const originStream = fs.createReadStream(path)

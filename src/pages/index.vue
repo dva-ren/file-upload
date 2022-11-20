@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import axios from 'axios'
+import request from '../composables/requests'
+
 import { md5 } from '../composables'
 
 const file = ref<File>()
 const result = ref<any>(null)
 const CHUNK_SIZE = 10 * 1024 * 1024
-const fileHash = ref('df23da6da162bc21d34928b36875327e')
+const fileHash = ref('')
 const uploadedList = ref<Blob[]>([])
 
 const uploadChunks = async (chunk: Blob, index: number) => {
@@ -13,11 +14,11 @@ const uploadChunks = async (chunk: Blob, index: number) => {
   const hash = await md5(chunk)
   form.append('chunk', chunk)
   form.append('hash', `${hash}_${index}`)
-  form.append('filename', file.value?.name)
+  form.append('filename', file.value!.name)
   form.append('fileHash', fileHash.value)
   try {
-    const res = await axios.post('http://localhost:3000/upload', form)
-    result.value = res.data
+    const res = await request.post('/upload', form)
+    result.value = res
     uploadedList.value.push(chunk)
   }
   catch (e) {
@@ -47,12 +48,12 @@ const handleCLick = async () => {
 }
 const handleMerge = async () => {
   try {
-    const res = await axios.post('http://localhost:3000/merge', {
+    const res = await request.post('/merge', {
       fileHash: fileHash.value,
       size: CHUNK_SIZE,
       filename: file.value!.name,
     })
-    result.value = res.data
+    result.value = res
   }
   catch (e) {
     result.value = '服务器合并错误'
